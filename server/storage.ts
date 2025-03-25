@@ -57,7 +57,7 @@ export class MemStorage implements IStorage {
       // Morning slot (9:00 AM - 11:00 AM)
       this.createSlot({
         date: setHours(setMinutes(day, 0), 9),
-        time: "9:00 AM - 11:00 AM",
+        time: "09:00 AM - 11:00 AM IST",
         booked: 0,
         releaseId: null
       });
@@ -65,7 +65,7 @@ export class MemStorage implements IStorage {
       // Afternoon slot (2:00 PM - 4:00 PM)
       this.createSlot({
         date: setHours(setMinutes(day, 0), 14),
-        time: "2:00 PM - 4:00 PM",
+        time: "02:00 PM - 04:00 PM IST",
         booked: 0,
         releaseId: null
       });
@@ -74,7 +74,7 @@ export class MemStorage implements IStorage {
       if (!isFriday) {
         this.createSlot({
           date: setHours(setMinutes(day, 0), 19),
-          time: "7:00 PM - 9:00 PM",
+          time: "07:00 PM - 09:00 PM IST",
           booked: 0,
           releaseId: null
         });
