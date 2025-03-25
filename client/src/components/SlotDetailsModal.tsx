@@ -1,14 +1,17 @@
 import { format } from "date-fns";
+import { useState } from "react";
 import { SlotWithRelease } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import ReleaseStatusModal from "./ReleaseStatusModal";
 
 interface SlotDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   slot: SlotWithRelease;
   onCancelBooking: () => void;
+  onStatusUpdate?: () => void;
 }
 
 export default function SlotDetailsModal({ isOpen, onClose, slot, onCancelBooking }: SlotDetailsModalProps) {

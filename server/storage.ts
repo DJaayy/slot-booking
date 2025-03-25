@@ -15,6 +15,7 @@ export interface IStorage {
   getUpcomingReleases(): Promise<(Release & { slot?: DeploymentSlot })[]>;
   createRelease(release: InsertRelease): Promise<Release>;
   deleteRelease(id: number): Promise<boolean>;
+  updateReleaseStatus(id: number, status: string, comments: string | null): Promise<Release | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -204,6 +205,21 @@ export class MemStorage implements IStorage {
     }
     
     return this.releases.delete(id);
+  }
+  
+  // Update release status
+  async updateReleaseStatus(id: number, status: string, comments: string | null): Promise<Release | undefined> {
+    const release = this.releases.get(id);
+    if (!release) return undefined;
+    
+    const updatedRelease = { 
+      ...release, 
+      status,
+      comments
+    };
+    
+    this.releases.set(id, updatedRelease);
+    return updatedRelease;
   }
 }
 

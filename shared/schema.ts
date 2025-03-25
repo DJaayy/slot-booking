@@ -66,9 +66,8 @@ export const bookSlotSchema = z.object({
 });
 
 export const updateReleaseStatusSchema = z.object({
-  releaseId: z.number(),
   status: z.enum(["pending", "released", "reverted", "skipped", "unbooked"]),
-  comments: z.string().optional(),
+  comments: z.string().nullable(),
 });
 
 // Types

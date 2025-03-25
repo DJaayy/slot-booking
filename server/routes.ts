@@ -112,6 +112,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update release status
+  app.patch("/api/releases/:id/status", async (req: Request, res: Response) => {
+    try {
+      const releaseId = parseInt(req.params.id);
+      
+      if (isNaN(releaseId)) {
+        return res.status(400).json({ message: "Invalid release ID" });
+      }
+      
+      const result = updateReleaseStatusSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: result.error.errors 
+        });
+      }
+      
+      const { status, comments } = result.data;
+      
+      const release = await storage.getRelease(releaseId);
+      
+      if (!release) {
+        return res.status(404).json({ message: "Release not found" });
+      }
+      
+      const updatedRelease = await storage.updateReleaseStatus(releaseId, status, comments || null);
+      
+      if (updatedRelease) {
+        res.json({ 
+          message: "Release status updated successfully", 
+          release: updatedRelease 
+        });
+      } else {
+        res.status(500).json({ message: "Failed to update release status" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: `Failed to update release status: ${error.message}` });
+    }
+  });
+
   // Get deployment statistics
   app.get("/api/stats", async (_req: Request, res: Response) => {
     try {
