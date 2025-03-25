@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Release } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import StatusTimeline from "./StatusTimeline"; // Added import
 
 interface ReleaseStatusModalProps {
   isOpen: boolean;
@@ -28,29 +29,29 @@ export default function ReleaseStatusModal({ isOpen, onClose, release, onSuccess
   const [comments, setComments] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       await apiRequest(`/api/releases/${release.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, comments: comments || null })
       });
-      
+
       toast({
         title: "Status updated",
         description: `The release status has been updated to ${status}.`,
         variant: "default",
       });
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/slots"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
-      
+
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -63,7 +64,7 @@ export default function ReleaseStatusModal({ isOpen, onClose, release, onSuccess
       setIsSubmitting(false);
     }
   };
-  
+
   // Reset form when modal opens
   const handleOnOpenChange = (open: boolean) => {
     if (!open) {
@@ -72,7 +73,7 @@ export default function ReleaseStatusModal({ isOpen, onClose, release, onSuccess
       onClose();
     }
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOnOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -80,7 +81,7 @@ export default function ReleaseStatusModal({ isOpen, onClose, release, onSuccess
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Update Release Status</DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-4 space-y-4">
             <div>
               <h3 className="font-medium text-lg">Release Details</h3>
@@ -118,7 +119,7 @@ export default function ReleaseStatusModal({ isOpen, onClose, release, onSuccess
                 )}
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="status" className="text-base font-medium">Status</Label>
               <RadioGroup 
@@ -145,7 +146,7 @@ export default function ReleaseStatusModal({ isOpen, onClose, release, onSuccess
                 </div>
               </RadioGroup>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="comments" className="text-base font-medium">Comments</Label>
               <Textarea
@@ -156,8 +157,9 @@ export default function ReleaseStatusModal({ isOpen, onClose, release, onSuccess
                 rows={3}
               />
             </div>
+          <StatusTimeline release={release} /> {/* Added StatusTimeline component */}
           </div>
-          
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
