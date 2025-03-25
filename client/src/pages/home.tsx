@@ -71,6 +71,16 @@ export default function Home() {
       variant: "default",
     });
   };
+  
+  const handleStatusUpdateSuccess = () => {
+    refetch();
+    closeDetailsModal();
+    toast({
+      title: "Success",
+      description: "Release status updated successfully!",
+      variant: "default",
+    });
+  };
 
   const previousWeek = () => {
     setCurrentWeek(prev => {
@@ -165,6 +175,7 @@ export default function Home() {
             onClose={closeDetailsModal}
             slot={selectedSlot}
             onCancelBooking={openConfirmationModal}
+            onStatusUpdate={handleStatusUpdateSuccess}
           />
           
           <ConfirmationModal

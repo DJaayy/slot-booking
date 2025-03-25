@@ -11,7 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 interface ReleaseStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
-  release: Release & { slot?: { date: Date | string; time: string; timeDetail?: string | null } };
+  release: Release & { 
+    slot?: { 
+      date: Date | string; 
+      time: string; 
+      timeDetail?: string | null 
+    } 
+  };
   onSuccess: () => void;
 }
 
@@ -28,10 +34,11 @@ export default function ReleaseStatusModal({ isOpen, onClose, release, onSuccess
     setIsSubmitting(true);
     
     try {
-      await apiRequest(`/api/releases/${release.id}/status`, "PATCH", {
-        status, 
-        comments: comments || null
-      });
+      await apiRequest(
+        "PATCH", 
+        `/api/releases/${release.id}/status`, 
+        { status, comments: comments || null }
+      );
       
       toast({
         title: "Status updated",
