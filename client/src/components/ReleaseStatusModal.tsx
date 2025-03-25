@@ -34,11 +34,11 @@ export default function ReleaseStatusModal({ isOpen, onClose, release, onSuccess
     setIsSubmitting(true);
     
     try {
-      await apiRequest(
-        "PATCH", 
-        `/api/releases/${release.id}/status`, 
-        { status, comments: comments || null }
-      );
+      await apiRequest(`/api/releases/${release.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, comments: comments || null })
+      });
       
       toast({
         title: "Status updated",
