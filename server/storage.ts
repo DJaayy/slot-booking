@@ -49,25 +49,36 @@ export class MemStorage implements IStorage {
     // Start of week (Monday)
     const weekStart = startOfWeek(date, { weekStartsOn: 1 });
     
-    // Create 2 slots per day for 5 days (Monday to Friday)
+    // Create slots for Monday to Friday
     for (let dayOffset = 0; dayOffset < 5; dayOffset++) {
       const day = addDays(weekStart, dayOffset);
+      const isFriday = dayOffset === 4; // Friday is the 5th day (index 4)
       
-      // Morning slot (9:00 AM)
+      // Morning slot (9:00 AM - 11:00 AM)
       this.createSlot({
         date: setHours(setMinutes(day, 0), 9),
-        time: "9:00 AM",
+        time: "9:00 AM - 11:00 AM",
         booked: 0,
         releaseId: null
       });
       
-      // Afternoon slot (11:00 AM)
+      // Afternoon slot (2:00 PM - 4:00 PM)
       this.createSlot({
-        date: setHours(setMinutes(day, 0), 11),
-        time: "11:00 AM",
+        date: setHours(setMinutes(day, 0), 14),
+        time: "2:00 PM - 4:00 PM",
         booked: 0,
         releaseId: null
       });
+      
+      // Evening slot (7:00 PM - 9:00 PM) - Monday to Thursday only
+      if (!isFriday) {
+        this.createSlot({
+          date: setHours(setMinutes(day, 0), 19),
+          time: "7:00 PM - 9:00 PM",
+          booked: 0,
+          releaseId: null
+        });
+      }
     }
   }
 
