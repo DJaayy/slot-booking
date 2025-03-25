@@ -1,4 +1,5 @@
-import { Pool } from "pg";
+import pg from "pg";
+const { Pool } = pg;
 import { drizzle } from "drizzle-orm/node-postgres";
 import { DeploymentSlot, InsertDeploymentSlot, Release, InsertRelease, SlotWithRelease, EmailTemplate, InsertEmailTemplate } from "@shared/schema";
 import { addDays, startOfWeek, parseISO } from "date-fns";
