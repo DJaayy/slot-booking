@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { bookSlotSchema, updateReleaseStatusSchema } from "@shared/schema";
+import { bookSlotSchema, updateReleaseStatusSchema, customizeEmailTemplateSchema, insertEmailTemplateSchema } from "@shared/schema";
 import { startOfWeek, endOfWeek, format, parseISO } from "date-fns";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -150,6 +150,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error: any) {
       res.status(500).json({ message: `Failed to update release status: ${error.message}` });
+    }
+  });
+
+  // Get email templates
+  app.get("/api/email-templates", async (req: Request, res: Response) => {
+    try {
+      let templates;
+      
+      if (req.query.category) {
+        templates = await storage.getEmailTemplatesByCategory(req.query.category as string);
+      } else {
+        templates = await storage.getEmailTemplates();
+      }
+      
+      res.json(templates);
+    } catch (error: any) {
+      res.status(500).json({ message: `Failed to get email templates: ${error.message}` });
+    }
+  });
+
+  // Get single email template
+  app.get("/api/email-templates/:id", async (req: Request, res: Response) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      
+      if (isNaN(templateId)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+      
+      const template = await storage.getEmailTemplate(templateId);
+      
+      if (!template) {
+        return res.status(404).json({ message: "Email template not found" });
+      }
+      
+      res.json(template);
+    } catch (error: any) {
+      res.status(500).json({ message: `Failed to get email template: ${error.message}` });
+    }
+  });
+
+  // Create a new email template
+  app.post("/api/email-templates", async (req: Request, res: Response) => {
+    try {
+      const result = insertEmailTemplateSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: result.error.errors 
+        });
+      }
+      
+      const template = await storage.createEmailTemplate(result.data);
+      
+      res.status(201).json({ 
+        message: "Email template created successfully", 
+        template 
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: `Failed to create email template: ${error.message}` });
+    }
+  });
+
+  // Update an email template
+  app.patch("/api/email-templates/:id", async (req: Request, res: Response) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      
+      if (isNaN(templateId)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+      
+      const result = customizeEmailTemplateSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: result.error.errors 
+        });
+      }
+      
+      const template = await storage.getEmailTemplate(templateId);
+      
+      if (!template) {
+        return res.status(404).json({ message: "Email template not found" });
+      }
+      
+      // Update the template
+      const updatedTemplate = await storage.updateEmailTemplate(templateId, result.data);
+      
+      if (updatedTemplate) {
+        res.json({ 
+          message: "Email template updated successfully", 
+          template: updatedTemplate 
+        });
+      } else {
+        res.status(500).json({ message: "Failed to update email template" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: `Failed to update email template: ${error.message}` });
+    }
+  });
+
+  // Delete an email template
+  app.delete("/api/email-templates/:id", async (req: Request, res: Response) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      
+      if (isNaN(templateId)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+      
+      const template = await storage.getEmailTemplate(templateId);
+      
+      if (!template) {
+        return res.status(404).json({ message: "Email template not found" });
+      }
+      
+      if (template.isDefault === 1) {
+        return res.status(403).json({ message: "Cannot delete default email templates" });
+      }
+      
+      const deleted = await storage.deleteEmailTemplate(templateId);
+      
+      if (deleted) {
+        res.json({ message: "Email template deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete email template" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: `Failed to delete email template: ${error.message}` });
     }
   });
 

@@ -16,22 +16,36 @@ export interface IStorage {
   createRelease(release: InsertRelease): Promise<Release>;
   deleteRelease(id: number): Promise<boolean>;
   updateReleaseStatus(id: number, status: string, comments: string | null): Promise<Release | undefined>;
+  
+  // Email Templates
+  getEmailTemplate(id: number): Promise<EmailTemplate | undefined>;
+  getEmailTemplates(): Promise<EmailTemplate[]>;
+  getEmailTemplatesByCategory(category: string): Promise<EmailTemplate[]>;
+  createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
+  updateEmailTemplate(id: number, template: Partial<EmailTemplate>): Promise<EmailTemplate | undefined>;
+  deleteEmailTemplate(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private slots: Map<number, DeploymentSlot>;
   private releases: Map<number, Release>;
+  private emailTemplates: Map<number, EmailTemplate>;
   private slotCurrentId: number;
   private releaseCurrentId: number;
+  private emailTemplateCurrentId: number;
 
   constructor() {
     this.slots = new Map();
     this.releases = new Map();
+    this.emailTemplates = new Map();
     this.slotCurrentId = 1;
     this.releaseCurrentId = 1;
+    this.emailTemplateCurrentId = 1;
 
     // Initialize with 10 slots per day for the current week and next week
     this.initializeSlots();
+    // Initialize default email templates
+    this.initializeDefaultEmailTemplates();
   }
 
   // Initialize deployment slots for the next two weeks
@@ -220,6 +234,109 @@ export class MemStorage implements IStorage {
     
     this.releases.set(id, updatedRelease);
     return updatedRelease;
+  }
+
+  // Initialize default email templates
+  private initializeDefaultEmailTemplates() {
+    // Booking confirmation template
+    this.createEmailTemplate({
+      name: "Deployment Booking Confirmation",
+      subject: "Deployment Slot Confirmation: {{releaseName}}",
+      body: "Dear Team Member,\n\nThis is to confirm that your deployment slot has been booked.\n\nDetails:\n- Release: {{releaseName}}{{version}}\n- Team: {{team}}\n- Type: {{releaseType}}\n- Date: {{date}}\n- Time: {{time}}\n\nPlease prepare your deployment package according to the release guidelines and contact the release team if you have any questions.\n\nBest regards,\nDeployment Management System",
+      category: "booking",
+      variables: {
+        "releaseName": "Name of the release",
+        "version": "Release version (optional)",
+        "team": "Team name",
+        "releaseType": "Type of the release",
+        "date": "Deployment date",
+        "time": "Deployment time"
+      },
+      isDefault: 1
+    });
+
+    // Status update template
+    this.createEmailTemplate({
+      name: "Deployment Status Update",
+      subject: "Deployment Status Update: {{releaseName}} - {{status}}",
+      body: "Dear Team Member,\n\nThe status of your deployment has been updated.\n\nDetails:\n- Release: {{releaseName}}{{version}}\n- Team: {{team}}\n- Status: {{status}}\n- Date: {{date}}\n- Time: {{time}}\n{{comments}}\n\nIf you have any questions, please contact the release team.\n\nBest regards,\nDeployment Management System",
+      category: "status-update",
+      variables: {
+        "releaseName": "Name of the release",
+        "version": "Release version (optional)",
+        "team": "Team name",
+        "status": "Status of the deployment",
+        "date": "Deployment date",
+        "time": "Deployment time",
+        "comments": "Additional comments (optional)"
+      },
+      isDefault: 1
+    });
+
+    // Reminder template
+    this.createEmailTemplate({
+      name: "Deployment Reminder",
+      subject: "Reminder: Upcoming Deployment - {{releaseName}}",
+      body: "Dear Team Member,\n\nThis is a reminder about your upcoming deployment.\n\nDetails:\n- Release: {{releaseName}}{{version}}\n- Team: {{team}}\n- Type: {{releaseType}}\n- Date: {{date}}\n- Time: {{time}}\n\nPlease ensure all pre-deployment checks are completed and your deployment package is ready.\n\nBest regards,\nDeployment Management System",
+      category: "reminder",
+      variables: {
+        "releaseName": "Name of the release",
+        "version": "Release version (optional)",
+        "team": "Team name",
+        "releaseType": "Type of the release",
+        "date": "Deployment date",
+        "time": "Deployment time"
+      },
+      isDefault: 1
+    });
+  }
+
+  // Email Template methods
+  async getEmailTemplate(id: number): Promise<EmailTemplate | undefined> {
+    return this.emailTemplates.get(id);
+  }
+
+  async getEmailTemplates(): Promise<EmailTemplate[]> {
+    return Array.from(this.emailTemplates.values());
+  }
+
+  async getEmailTemplatesByCategory(category: string): Promise<EmailTemplate[]> {
+    return Array.from(this.emailTemplates.values())
+      .filter(template => template.category === category);
+  }
+
+  async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
+    const id = this.emailTemplateCurrentId++;
+    
+    const newTemplate: EmailTemplate = {
+      id,
+      name: template.name,
+      subject: template.subject,
+      body: template.body,
+      category: template.category,
+      variables: template.variables,
+      isDefault: template.isDefault || 0,
+      createdAt: new Date()
+    };
+    
+    this.emailTemplates.set(id, newTemplate);
+    return newTemplate;
+  }
+
+  async updateEmailTemplate(id: number, updates: Partial<EmailTemplate>): Promise<EmailTemplate | undefined> {
+    const template = this.emailTemplates.get(id);
+    if (!template) return undefined;
+    
+    const updatedTemplate = { ...template, ...updates };
+    this.emailTemplates.set(id, updatedTemplate);
+    return updatedTemplate;
+  }
+
+  async deleteEmailTemplate(id: number): Promise<boolean> {
+    const template = this.emailTemplates.get(id);
+    if (!template || template.isDefault === 1) return false; // Don't allow deleting default templates
+    
+    return this.emailTemplates.delete(id);
   }
 }
 
