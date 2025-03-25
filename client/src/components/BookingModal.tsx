@@ -91,7 +91,7 @@ export default function BookingModal({ isOpen, onClose, slot, onSuccess }: Booki
           <p className="text-sm text-gray-500 mb-2">You are booking:</p>
           <div className="bg-blue-50 p-3 rounded-md">
             <p className="font-medium text-gray-800">{formattedDate}</p>
-            <p className="text-gray-600">{slot.time}</p>
+            <p className="text-gray-600">{slot.timeDetail || slot.time}</p>
           </div>
         </div>
 

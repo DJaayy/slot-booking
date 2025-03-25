@@ -13,6 +13,7 @@ export const deploymentSlots = pgTable("deployment_slots", {
   id: serial("id").primaryKey(),
   date: timestamp("date").notNull(),
   time: text("time").notNull(),
+  timeDetail: text("time_detail"),
   booked: integer("booked").default(0).notNull(), // 0 = available, 1 = booked
   releaseId: integer("release_id"),
 });
@@ -38,6 +39,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertDeploymentSlotSchema = createInsertSchema(deploymentSlots).pick({
   date: true,
   time: true,
+  timeDetail: true,
   booked: true,
   releaseId: true,
 });

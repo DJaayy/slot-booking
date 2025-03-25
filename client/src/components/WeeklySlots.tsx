@@ -69,6 +69,7 @@ export default function WeeklySlots({
                           : "bg-slate-50 border border-slate-200 hover:border-primary"
                       }`}
                       onClick={() => slot.booked === 1 ? onViewSlot(slot) : onBookSlot(slot)}
+                      title={slot.timeDetail || ""}
                     >
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-medium text-slate-700">{slot.time}</span>

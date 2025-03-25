@@ -44,7 +44,7 @@ export default function SlotDetailsModal({ isOpen, onClose, slot, onCancelBookin
         <div className="space-y-4 py-2">
           <div className="bg-blue-50 p-3 rounded-md">
             <p className="font-medium text-gray-800">{formattedDate}</p>
-            <p className="text-gray-600">{slot.time}</p>
+            <p className="text-gray-600">{slot.timeDetail || slot.time}</p>
           </div>
           
           <div>
