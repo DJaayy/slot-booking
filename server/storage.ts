@@ -1,4 +1,4 @@
-import { DeploymentSlot, InsertDeploymentSlot, Release, InsertRelease, SlotWithRelease } from "@shared/schema";
+import { DeploymentSlot, InsertDeploymentSlot, Release, InsertRelease, SlotWithRelease, EmailTemplate, InsertEmailTemplate } from "@shared/schema";
 import { addDays, startOfWeek, format, setHours, setMinutes, parseISO } from "date-fns";
 
 export interface IStorage {

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -31,6 +31,18 @@ export const releases = pgTable("releases", {
   slotId: integer("slot_id").notNull(),
 });
 
+// Email Templates Schema
+export const emailTemplates = pgTable("email_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  category: text("category").notNull(), // booking, status-update, reminder
+  variables: json("variables").notNull(), // Available variables for this template
+  isDefault: integer("is_default").default(0).notNull(), // 0 = custom, 1 = default
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -56,6 +68,15 @@ export const insertReleaseSchema = createInsertSchema(releases).pick({
   slotId: true,
 });
 
+export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).pick({
+  name: true,
+  subject: true,
+  body: true,
+  category: true,
+  variables: true,
+  isDefault: true,
+});
+
 export const bookSlotSchema = z.object({
   slotId: z.number(),
   releaseName: z.string().min(1, "Release name is required"),
@@ -70,6 +91,16 @@ export const updateReleaseStatusSchema = z.object({
   comments: z.string().nullable(),
 });
 
+export const customizeEmailTemplateSchema = z.object({
+  id: z.number().optional(),
+  name: z.string().min(1, "Template name is required"),
+  subject: z.string().min(1, "Subject is required"),
+  body: z.string().min(1, "Body is required"),
+  category: z.enum(["booking", "status-update", "reminder"]),
+  variables: z.record(z.string(), z.string()),
+  isDefault: z.number().default(0),
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -82,6 +113,10 @@ export type Release = typeof releases.$inferSelect;
 
 export type BookSlot = z.infer<typeof bookSlotSchema>;
 export type UpdateReleaseStatus = z.infer<typeof updateReleaseStatusSchema>;
+export type CustomizeEmailTemplate = z.infer<typeof customizeEmailTemplateSchema>;
+
+export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
 
 // Combined Slot with Release Info
 export type SlotWithRelease = DeploymentSlot & {
