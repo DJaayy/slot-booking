@@ -26,7 +26,8 @@ export const releases = pgTable("releases", {
   team: text("team").notNull(),
   releaseType: text("release_type").notNull(),
   description: text("description"),
-  status: text("status").default("pending").notNull(),
+  status: text("status").default("pending").notNull(), // pending, released, reverted, skipped, unbooked
+  comments: text("comments"), // For status change comments
   slotId: integer("slot_id").notNull(),
 });
 
@@ -51,6 +52,7 @@ export const insertReleaseSchema = createInsertSchema(releases).pick({
   releaseType: true,
   description: true,
   status: true,
+  comments: true,
   slotId: true,
 });
 
@@ -61,6 +63,12 @@ export const bookSlotSchema = z.object({
   team: z.string().min(1, "Team is required"),
   releaseType: z.string().min(1, "Release type is required"),
   description: z.string().optional(),
+});
+
+export const updateReleaseStatusSchema = z.object({
+  releaseId: z.number(),
+  status: z.enum(["pending", "released", "reverted", "skipped", "unbooked"]),
+  comments: z.string().optional(),
 });
 
 // Types
@@ -74,6 +82,7 @@ export type InsertRelease = z.infer<typeof insertReleaseSchema>;
 export type Release = typeof releases.$inferSelect;
 
 export type BookSlot = z.infer<typeof bookSlotSchema>;
+export type UpdateReleaseStatus = z.infer<typeof updateReleaseStatusSchema>;
 
 // Combined Slot with Release Info
 export type SlotWithRelease = DeploymentSlot & {

@@ -178,6 +178,7 @@ export class MemStorage implements IStorage {
       releaseType: release.releaseType,
       description: release.description || null,
       status: release.status || 'pending',
+      comments: release.comments || null,
       slotId: release.slotId
     };
     

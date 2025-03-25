@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { bookSlotSchema } from "@shared/schema";
+import { bookSlotSchema, updateReleaseStatusSchema } from "@shared/schema";
 import { startOfWeek, endOfWeek, format, parseISO } from "date-fns";
 
 export async function registerRoutes(app: Express): Promise<Server> {
