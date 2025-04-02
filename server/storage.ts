@@ -26,8 +26,7 @@ const NEXT_ID = { slot: 1, release: 1, template: 1 };
 function setupDefaultSlots() {
   // Starting date (use current date as reference)
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
+  now.setHours(0, 0, 0, 0); // Set to midnight for date comparison
   
   // Generate slots for the next 4 weeks
   for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
@@ -39,6 +38,10 @@ function setupDefaultSlots() {
     for (let day = 1; day <= 5; day++) { // Monday to Friday
       const date = new Date(monday);
       date.setDate(monday.getDate() + day - 1);
+      
+      // Skip days in the past
+      if (date < now) continue;
+      
       const dateStr = date.toISOString().split('T')[0];
       
       // Skip weekends
@@ -194,13 +197,15 @@ export class MemoryStorage implements IStorage {
   async getSlotsByWeek(date: Date): Promise<SlotWithRelease[]> {
     const weekStart = startOfWeek(date, { weekStartsOn: 1 });
     const weekEnd = addDays(weekStart, 6);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Set to midnight to compare dates properly
     
     // Filter slots within the week range
     const result: SlotWithRelease[] = [];
     
     for (const dateKey in SLOTS_BY_DAY) {
       const dateObj = new Date(dateKey);
-      if (dateObj >= weekStart && dateObj <= weekEnd) {
+      if (dateObj >= weekStart && dateObj <= weekEnd && dateObj >= now) {
         const slotsForDay = SLOTS_BY_DAY[dateKey].map(slot => {
           // If this slot has a release assigned, look it up
           if (slot.releaseId) {
@@ -256,6 +261,9 @@ export class MemoryStorage implements IStorage {
   }
 
   async getUpcomingReleases(): Promise<(Release & { slot?: DeploymentSlot })[]> {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Set to midnight to compare dates properly
+
     // Return releases with their associated slots
     return RELEASES.map(release => {
       // Find the slot with this release
@@ -270,6 +278,11 @@ export class MemoryStorage implements IStorage {
       }
       
       return { ...release, slot };
+    }).filter(releaseWithSlot => {
+      // Filter only releases with slots in the future
+      if (!releaseWithSlot.slot) return false;
+      const slotDate = new Date(releaseWithSlot.slot.date);
+      return slotDate >= now;
     });
   }
 

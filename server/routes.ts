@@ -67,6 +67,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (slot.booked === 1) {
         return res.status(409).json({ message: "Slot is already booked" });
       }
+
+      // Check if slot is in the past
+      const slotDate = new Date(slot.date);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Set to midnight for date comparison
+      
+      if (slotDate < now) {
+        return res.status(400).json({ message: "Cannot book slots in the past" });
+      }
       
       // Create a release and book the slot
       const release = await storage.createRelease({
@@ -298,6 +307,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allReleases = await storage.getReleases();
       
       const now = new Date();
+      now.setHours(0, 0, 0, 0); // Set to midnight for date comparison
+      
       const currentWeekStart = startOfWeek(now, { weekStartsOn: 1 });
       const currentWeekEnd = endOfWeek(now, { weekStartsOn: 1 });
       const nextWeekStart = new Date(currentWeekStart);
@@ -305,34 +316,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nextWeekEnd = new Date(currentWeekEnd);
       nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
       
-      // Slot counts
-      const availableSlots = allSlots.filter(slot => slot.booked === 0).length;
-      const totalUpcoming = allReleases.length;
+      // Filter only future slots
+      const futureSlots = allSlots.filter(slot => {
+        const slotDate = new Date(slot.date);
+        return slotDate >= now;
+      });
       
-      // Releases this week and next week
-      const thisWeek = allReleases.filter(release => {
+      // Slot counts (only consider future slots)
+      const availableSlots = futureSlots.filter(slot => slot.booked === 0).length;
+      
+      // Get only future releases by checking their associated slots
+      const futureReleases = allReleases.filter(release => {
+        const slot = allSlots.find(s => s.id === release.slotId);
+        if (!slot) return false;
+        const slotDate = new Date(slot.date);
+        return slotDate >= now;
+      });
+      
+      const totalUpcoming = futureReleases.length;
+      
+      // Releases this week and next week (only consider future releases)
+      const thisWeek = futureReleases.filter(release => {
         const slot = allSlots.find(s => s.id === release.slotId);
         if (!slot) return false;
         const slotDate = new Date(slot.date);
         return slotDate >= currentWeekStart && slotDate <= currentWeekEnd;
       }).length;
       
-      const nextWeek = allReleases.filter(release => {
+      const nextWeek = futureReleases.filter(release => {
         const slot = allSlots.find(s => s.id === release.slotId);
         if (!slot) return false;
         const slotDate = new Date(slot.date);
         return slotDate >= nextWeekStart && slotDate <= nextWeekEnd;
       }).length;
       
-      // Count by release type
-      const byType = allReleases.reduce((acc, release) => {
+      // Count by release type (only future releases)
+      const byType = futureReleases.reduce((acc, release) => {
         const type = release.releaseType;
         acc[type] = (acc[type] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
       
-      // Count by team
-      const byTeam = allReleases.reduce((acc, release) => {
+      // Count by team (only future releases)
+      const byTeam = futureReleases.reduce((acc, release) => {
         const team = release.team;
         acc[team] = (acc[team] || 0) + 1;
         return acc;
