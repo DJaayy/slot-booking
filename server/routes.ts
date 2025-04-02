@@ -79,6 +79,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         slotId
       });
       
+      // Update the slot to mark it as booked
+      await storage.updateSlot(slotId, { 
+        booked: 1,
+        releaseId: release.id
+      });
+      
       res.status(201).json({ message: "Slot booked successfully", release });
     } catch (error: any) {
       res.status(500).json({ message: `Failed to book slot: ${error.message}` });

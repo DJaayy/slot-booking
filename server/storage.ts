@@ -307,7 +307,9 @@ export class MemoryStorage implements IStorage {
     for (const dateKey in SLOTS_BY_DAY) {
       const slotIndex = SLOTS_BY_DAY[dateKey].findIndex(slot => slot.releaseId === id);
       if (slotIndex !== -1) {
+        // Update both releaseId and booked status
         SLOTS_BY_DAY[dateKey][slotIndex].releaseId = null;
+        SLOTS_BY_DAY[dateKey][slotIndex].booked = 0;
       }
     }
     
