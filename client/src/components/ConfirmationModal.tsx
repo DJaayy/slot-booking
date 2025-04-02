@@ -29,12 +29,16 @@ export default function ConfirmationModal({ isOpen, onClose, onConfirm, slot }: 
   // Cancel booking mutation
   const cancelBookingMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("DELETE", `/api/releases/${slot.release?.id}`);
+      const options: RequestInit = {
+        method: "DELETE",
+      };
+      return await apiRequest(`/api/releases/${slot.release?.id}`, options);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/slots"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      // Invalidate all relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/slots'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/releases'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
       onConfirm();
     },
     onError: (error) => {

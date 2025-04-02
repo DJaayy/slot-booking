@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { z } from "zod";
 import { SlotWithRelease } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,12 +62,23 @@ export default function BookingModal({ isOpen, onClose, slot, onSuccess }: Booki
   // Booking mutation
   const bookSlotMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      return await apiRequest("POST", "/api/slots/book", {
-        slotId: slot.id,
-        ...values,
-      });
+      const options: RequestInit = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          slotId: slot.id,
+          ...values,
+        }),
+      };
+      return await apiRequest("/api/slots/book", options);
     },
     onSuccess: () => {
+      // Invalidate all relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/slots'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/releases'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
       onClose();
       onSuccess();
       form.reset();
