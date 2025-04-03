@@ -3,8 +3,73 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { bookSlotSchema, updateReleaseStatusSchema, customizeEmailTemplateSchema, insertEmailTemplateSchema } from "@shared/schema";
 import { startOfWeek, endOfWeek, format, parseISO } from "date-fns";
+import path from "path";
+import fs from "fs";
+
+// Function to create a Firestore-compatible date from a string or Date
+function toFirestoreDate(date: string | Date) {
+  return new Date(date);
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup Firestore slots from existing database
+  app.get("/api/setup-firestore", async (_req: Request, res: Response) => {
+    try {
+      const slots = await storage.getSlots();
+      
+      res.json({
+        message: "Firestore setup API endpoint. This would populate Firestore with slots.",
+        slots: slots,
+        note: "This is a stub endpoint for reference. In production, you would connect to Firestore SDK here."
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: `Failed to setup Firestore: ${error.message}` });
+    }
+  });
+  // Serve Firebase credentials to the client
+  app.get("/api/firebase-config", (req: Request, res: Response) => {
+    res.json({
+      apiKey: process.env.FIREBASE_API_KEY,
+      authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.FIREBASE_APP_ID
+    });
+  });
+
+  // Serve HTML files with Firebase credentials injected
+  app.get("/*.html", (req: Request, res: Response, next) => {
+    try {
+      const filename = req.path.substring(1);
+      const filePath = path.resolve(__dirname, "../public", filename);
+      
+      if (fs.existsSync(filePath)) {
+        let htmlContent = fs.readFileSync(filePath, 'utf8');
+        
+        // Inject Firebase credentials as global variables
+        const firebaseCredentials = `
+          <script>
+            window.FIREBASE_API_KEY = "${process.env.FIREBASE_API_KEY}";
+            window.FIREBASE_AUTH_DOMAIN = "${process.env.FIREBASE_AUTH_DOMAIN}";
+            window.FIREBASE_PROJECT_ID = "${process.env.FIREBASE_PROJECT_ID}";
+            window.FIREBASE_STORAGE_BUCKET = "${process.env.FIREBASE_STORAGE_BUCKET}";
+            window.FIREBASE_MESSAGING_SENDER_ID = "${process.env.FIREBASE_MESSAGING_SENDER_ID}";
+            window.FIREBASE_APP_ID = "${process.env.FIREBASE_APP_ID}";
+          </script>
+        `;
+        
+        // Insert just before the closing head tag
+        htmlContent = htmlContent.replace('</head>', `${firebaseCredentials}</head>`);
+        
+        res.send(htmlContent);
+      } else {
+        next();
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
   // Get slots for a specific week
   app.get("/api/slots", async (req: Request, res: Response) => {
     try {

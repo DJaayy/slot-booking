@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Slots | Deployment Slot Booking</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Include Tailwind CSS CDN for quick styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col">
+    <header class="bg-blue-600 text-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <a href="index.html">
+                    <h1 class="text-xl font-semibold cursor-pointer">Deployment Slot Booking</h1>
+                </a>
+            </div>
+            <div class="flex items-center space-x-6">
+                <nav class="hidden md:flex items-center space-x-4">
+                    <div class="cursor-pointer text-white hover:text-blue-100 transition-colors font-medium">
+                        <a href="index.html">Weekly Slots</a>
+                    </div>
+                    <div class="cursor-pointer text-white hover:text-blue-100 transition-colors">
+                        <a href="dashboard.html">Dashboard</a>
+                    </div>
+                </nav>
+                <div class="flex items-center">
+                    <span class="text-sm hidden md:inline-block">Welcome, Team</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <h2 class="text-xl font-semibold text-slate-800 mb-3 md:mb-0">Weekly Deployment Slots</h2>
+                
+                <div class="flex items-center space-x-2">
+                    <button id="prev-week-btn" class="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Previous
+                    </button>
+                    <span id="week-range" class="text-sm font-medium text-gray-600">Apr 3 - Apr 9, 2025</span>
+                    <button id="next-week-btn" class="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Next
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Days of the week -->
+            <div class="grid grid-cols-5 gap-4 mb-6">
+                <div class="day-container" data-day="Monday">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Monday</h3>
+                    <div class="day-slots space-y-3">
+                        <p class="text-center text-gray-500 py-4">Loading slots...</p>
+                    </div>
+                </div>
+                
+                <div class="day-container" data-day="Tuesday">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Tuesday</h3>
+                    <div class="day-slots space-y-3">
+                        <p class="text-center text-gray-500 py-4">Loading slots...</p>
+                    </div>
+                </div>
+                
+                <div class="day-container" data-day="Wednesday">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Wednesday</h3>
+                    <div class="day-slots space-y-3">
+                        <p class="text-center text-gray-500 py-4">Loading slots...</p>
+                    </div>
+                </div>
+                
+                <div class="day-container" data-day="Thursday">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Thursday</h3>
+                    <div class="day-slots space-y-3">
+                        <p class="text-center text-gray-500 py-4">Loading slots...</p>
+                    </div>
+                </div>
+                
+                <div class="day-container" data-day="Friday">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Friday</h3>
+                    <div class="day-slots space-y-3">
+                        <p class="text-center text-gray-500 py-4">Loading slots...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Book a Deployment Slot</h3>
+                    <button id="close-booking-modal" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="mb-4">
+                    <p id="booking-slot-time" class="text-sm font-medium text-gray-700"></p>
+                </div>
+                <form id="booking-form" class="space-y-4">
+                    <input type="hidden" id="slot-id">
+                    <div>
+                        <label for="release-name" class="block text-sm font-medium text-gray-700">Release Name</label>
+                        <input type="text" id="release-name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div>
+                        <label for="version" class="block text-sm font-medium text-gray-700">Version</label>
+                        <input type="text" id="version" placeholder="e.g., 1.2.3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="team" class="block text-sm font-medium text-gray-700">Team</label>
+                        <select id="team" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">Select a team</option>
+                            <option value="Backend Team">Backend Team</option>
+                            <option value="Frontend Team">Frontend Team</option>
+                            <option value="Data Team">Data Team</option>
+                            <option value="Security Team">Security Team</option>
+                            <option value="Finance Team">Finance Team</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="release-type" class="block text-sm font-medium text-gray-700">Release Type</label>
+                        <select id="release-type" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">Select a type</option>
+                            <option value="feature">Feature</option>
+                            <option value="enhancement">Enhancement</option>
+                            <option value="bugfix">Bug Fix</option>
+                            <option value="migration">Migration</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="description" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Book Slot
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slot Details Modal -->
+    <div id="details-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Deployment Details</h3>
+                    <button id="close-details-modal" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Date/Time</h4>
+                        <p id="details-datetime" class="text-base"></p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Release Name</h4>
+                        <p id="details-name" class="text-base"></p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Version</h4>
+                        <p id="details-version" class="text-base"></p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Team</h4>
+                        <p id="details-team" class="text-base"></p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Type</h4>
+                        <p id="details-type" class="text-base"></p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Description</h4>
+                        <p id="details-description" class="text-base"></p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Status</h4>
+                        <p id="details-status" class="text-base"></p>
+                    </div>
+                </div>
+                <div class="flex justify-between mt-6">
+                    <button id="cancel-booking-btn" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        Cancel Booking
+                    </button>
+                    <button id="update-status-btn" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Update Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Update Modal -->
+    <div id="status-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Update Deployment Status</h3>
+                    <button id="close-status-modal" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <form id="status-form" class="space-y-4">
+                    <input type="hidden" id="release-id">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Select Status</label>
+                        <div class="mt-2 space-y-2">
+                            <div class="flex items-center">
+                                <input type="radio" id="status-released" name="status" value="released" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                <label for="status-released" class="ml-2 block text-sm text-gray-700">Released (Successful Deployment)</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="status-reverted" name="status" value="reverted" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                <label for="status-reverted" class="ml-2 block text-sm text-gray-700">Reverted (Failed Deployment)</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="status-skipped" name="status" value="skipped" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                <label for="status-skipped" class="ml-2 block text-sm text-gray-700">Skipped (Not Attempted)</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="status-comments" class="block text-sm font-medium text-gray-700">Comments</label>
+                        <textarea id="status-comments" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-2">
+                        <button type="button" id="cancel-status-update" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Update Status
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="mt-2 text-sm text-gray-600">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 px-4 py-2 bg-green-500 text-white rounded-md shadow-lg transform transition-all duration-300 opacity-0 translate-y-8 z-50">
+        <span id="toast-message">Success!</span>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Application Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/index.js"></script>
+</body>
+</html>

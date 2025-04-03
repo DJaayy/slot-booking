@@ -1,0 +1,196 @@
+/* Custom CSS Styles */
+
+/* General layout and styling */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Time Slot Card Styling */
+.slot-card {
+    transition: all 0.2s ease-in-out;
+}
+
+.slot-card:hover {
+    transform: translateY(-2px);
+}
+
+.slot-card.booked {
+    border-left: 4px solid rgb(79, 70, 229);
+}
+
+.slot-card.available {
+    border-left: 4px solid rgb(16, 185, 129);
+}
+
+/* Badge styling */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.375rem;
+}
+
+.badge-feature {
+    background-color: rgb(239, 246, 255);
+    color: rgb(37, 99, 235);
+}
+
+.badge-enhancement {
+    background-color: rgb(236, 253, 245);
+    color: rgb(16, 185, 129);
+}
+
+.badge-bugfix {
+    background-color: rgb(254, 242, 242);
+    color: rgb(220, 38, 38);
+}
+
+.badge-migration {
+    background-color: rgb(243, 232, 255);
+    color: rgb(126, 34, 206);
+}
+
+.badge-other {
+    background-color: rgb(243, 244, 246);
+    color: rgb(75, 85, 99);
+}
+
+.badge-pending {
+    background-color: rgb(254, 249, 195);
+    color: rgb(161, 98, 7);
+}
+
+.badge-completed {
+    background-color: rgb(236, 253, 245);
+    color: rgb(16, 185, 129);
+}
+
+.badge-canceled {
+    background-color: rgb(254, 242, 242);
+    color: rgb(220, 38, 38);
+}
+
+/* Status Timeline */
+.status-timeline {
+    position: relative;
+    padding-left: 28px;
+}
+
+.status-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 9px;
+    width: 2px;
+    background-color: rgb(229, 231, 235);
+}
+
+.status-step {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.status-step:last-child {
+    padding-bottom: 0;
+}
+
+.status-icon {
+    position: absolute;
+    left: -28px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: white;
+    border: 2px solid rgb(209, 213, 219);
+    z-index: 1;
+}
+
+.status-step.active .status-icon {
+    background-color: rgb(79, 70, 229);
+    border-color: rgb(79, 70, 229);
+}
+
+.status-step.completed .status-icon {
+    background-color: rgb(16, 185, 129);
+    border-color: rgb(16, 185, 129);
+}
+
+.status-step.failed .status-icon {
+    background-color: rgb(220, 38, 38);
+    border-color: rgb(220, 38, 38);
+}
+
+/* Toast animations */
+@keyframes slideInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutDown {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+}
+
+.toast-enter {
+    animation: slideInUp 0.3s forwards;
+}
+
+.toast-exit {
+    animation: slideOutDown 0.3s forwards;
+}
+
+/* Slot time details tooltip */
+.time-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.time-tooltip .tooltip-text {
+    visibility: hidden;
+    width: 180px;
+    background-color: rgb(17, 24, 39);
+    color: white;
+    text-align: center;
+    padding: 5px;
+    border-radius: 6px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -90px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.75rem;
+}
+
+.time-tooltip .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgb(17, 24, 39) transparent transparent transparent;
+}
+
+.time-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
