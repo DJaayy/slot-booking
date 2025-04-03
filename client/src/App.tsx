@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
-import EmailTemplatesPage from "@/pages/email-templates";
 import Header from "@/components/Header";
 
 function Router() {
@@ -16,7 +15,6 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/dashboard" component={Dashboard} />
-          <Route path="/email-templates" component={EmailTemplatesPage} />
           <Route component={NotFound} />
         </Switch>
       </main>

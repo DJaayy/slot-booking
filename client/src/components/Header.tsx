@@ -1,6 +1,4 @@
 import { useLocation, Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { HelpCircle } from "lucide-react";
 
 export default function Header() {
   const [location] = useLocation();
@@ -21,16 +19,9 @@ export default function Header() {
             <div className={`cursor-pointer text-white hover:text-blue-100 transition-colors ${location === '/dashboard' ? 'font-medium' : ''}`}>
               <Link href="/dashboard">Dashboard</Link>
             </div>
-            <div className={`cursor-pointer text-white hover:text-blue-100 transition-colors ${location === '/email-templates' ? 'font-medium' : ''}`}>
-              <Link href="/email-templates">Email Templates</Link>
-            </div>
           </nav>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center">
             <span className="text-sm hidden md:inline-block">Welcome, Team</span>
-            <Button variant="secondary" size="sm" className="text-primary bg-white hover:bg-blue-50">
-              <HelpCircle className="h-4 w-4 mr-1" />
-              <span>Help</span>
-            </Button>
           </div>
         </div>
       </div>
