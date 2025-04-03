@@ -10,12 +10,9 @@ import {
   SlotWithRelease, 
   EmailTemplate, 
   InsertEmailTemplate,
-  User,
-  InsertUser,
   deploymentSlots,
   releases,
-  emailTemplates,
-  users
+  emailTemplates
 } from "@shared/schema";
 import { addDays, startOfWeek, parseISO } from "date-fns";
 
@@ -23,8 +20,7 @@ import { addDays, startOfWeek, parseISO } from "date-fns";
 const SLOTS_BY_DAY: Record<string, SlotWithRelease[]> = {};
 const RELEASES: Release[] = [];
 const EMAIL_TEMPLATES: EmailTemplate[] = [];
-const USERS: User[] = [];
-const NEXT_ID = { slot: 1, release: 1, template: 1, user: 1 };
+const NEXT_ID = { slot: 1, release: 1, template: 1 };
 
 // Setup default slots (Mon-Thu: 3 slots, Fri: 2 slots)
 function setupDefaultSlots() {
@@ -159,56 +155,22 @@ function setupDefaultEmailTemplates() {
   });
 }
 
-// Setup default users
-function setupDefaultUsers() {
-  // Admin user
-  USERS.push({
-    id: NEXT_ID.user++,
-    username: "admin",
-    password: "admin123", // In a real app, this would be hashed
-    role: "admin"
-  });
-  
-  // Developer user
-  USERS.push({
-    id: NEXT_ID.user++,
-    username: "developer",
-    password: "dev123", // In a real app, this would be hashed
-    role: "developer"
-  });
-}
-
 // Initialize our default data
 setupDefaultSlots();
 setupDefaultEmailTemplates();
-setupDefaultUsers();
 
 export interface IStorage {
-  // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  getUsers(): Promise<User[]>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
-  deleteUser(id: number): Promise<boolean>;
-  validateUser(username: string, password: string): Promise<User | null>;
-  
-  // Slot methods
   getSlot(id: number): Promise<DeploymentSlot | undefined>;
   getSlots(): Promise<DeploymentSlot[]>;
   getSlotsByWeek(date: Date): Promise<SlotWithRelease[]>;
   createSlot(slot: InsertDeploymentSlot): Promise<DeploymentSlot>;
   updateSlot(id: number, slot: Partial<DeploymentSlot>): Promise<DeploymentSlot | undefined>;
-  
-  // Release methods
   getRelease(id: number): Promise<Release | undefined>;
   getReleases(): Promise<Release[]>;
   getUpcomingReleases(): Promise<(Release & { slot?: DeploymentSlot })[]>;
   createRelease(release: InsertRelease): Promise<Release>;
   deleteRelease(id: number): Promise<boolean>;
   updateReleaseStatus(id: number, status: string, comments: string | null): Promise<Release | undefined>;
-  
-  // Email template methods
   getEmailTemplate(id: number): Promise<EmailTemplate | undefined>;
   getEmailTemplates(): Promise<EmailTemplate[]>;
   getEmailTemplatesByCategory(category: string): Promise<EmailTemplate[]>;
@@ -218,76 +180,6 @@ export interface IStorage {
 }
 
 export class MemoryStorage implements IStorage {
-  // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    return USERS.find(user => user.id === id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return USERS.find(user => user.username === username);
-  }
-
-  async getUsers(): Promise<User[]> {
-    return [...USERS];
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    // Check if username already exists
-    const existingUser = await this.getUserByUsername(user.username);
-    if (existingUser) {
-      throw new Error("Username already exists");
-    }
-    
-    const newUser: User = {
-      id: NEXT_ID.user++,
-      username: user.username,
-      password: user.password, // In a real app, this would be hashed
-      role: user.role || "developer" // Default to developer role
-    };
-    
-    USERS.push(newUser);
-    return newUser;
-  }
-
-  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const index = USERS.findIndex(user => user.id === id);
-    if (index === -1) return undefined;
-    
-    // If updating username, check if new username already exists
-    if (updates.username && updates.username !== USERS[index].username) {
-      const existingUser = await this.getUserByUsername(updates.username);
-      if (existingUser) {
-        throw new Error("Username already exists");
-      }
-    }
-    
-    USERS[index] = { 
-      ...USERS[index], 
-      ...updates 
-    };
-    
-    return USERS[index];
-  }
-
-  async deleteUser(id: number): Promise<boolean> {
-    const index = USERS.findIndex(user => user.id === id);
-    if (index === -1) return false;
-    
-    USERS.splice(index, 1);
-    return true;
-  }
-
-  async validateUser(username: string, password: string): Promise<User | null> {
-    const user = await this.getUserByUsername(username);
-    
-    if (!user || user.password !== password) {
-      return null;
-    }
-    
-    return user;
-  }
-
-  // Slot methods
   async getSlot(id: number): Promise<DeploymentSlot | undefined> {
     // Find slot in all days
     for (const dateKey in SLOTS_BY_DAY) {

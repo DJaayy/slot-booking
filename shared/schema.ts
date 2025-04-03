@@ -6,7 +6,6 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role").default("developer").notNull(), // 'developer' or 'admin'
 });
 
 // Deployment Slots Schema
@@ -48,7 +47,6 @@ export const emailTemplates = pgTable("email_templates", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
-  role: true,
 });
 
 export const insertDeploymentSlotSchema = createInsertSchema(deploymentSlots).pick({
@@ -103,17 +101,6 @@ export const customizeEmailTemplateSchema = z.object({
   isDefault: z.number().default(0),
 });
 
-export const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-});
-
-export const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["developer", "admin"]).default("developer"),
-});
-
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -127,8 +114,6 @@ export type Release = typeof releases.$inferSelect;
 export type BookSlot = z.infer<typeof bookSlotSchema>;
 export type UpdateReleaseStatus = z.infer<typeof updateReleaseStatusSchema>;
 export type CustomizeEmailTemplate = z.infer<typeof customizeEmailTemplateSchema>;
-export type Login = z.infer<typeof loginSchema>;
-export type Register = z.infer<typeof registerSchema>;
 
 export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
 export type EmailTemplate = typeof emailTemplates.$inferSelect;
