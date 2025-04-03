@@ -1,12 +1,175 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import session from "express-session";
 import { storage } from "./storage";
-import { bookSlotSchema, updateReleaseStatusSchema, customizeEmailTemplateSchema, insertEmailTemplateSchema } from "@shared/schema";
+import { 
+  bookSlotSchema, 
+  updateReleaseStatusSchema, 
+  customizeEmailTemplateSchema, 
+  insertEmailTemplateSchema,
+  loginSchema,
+  registerSchema
+} from "@shared/schema";
 import { startOfWeek, endOfWeek, format, parseISO } from "date-fns";
 
+// Type augmentation for express-session
+declare module "express-session" {
+  interface SessionData {
+    user?: {
+      id: number;
+      username: string;
+      role: string;
+    };
+  }
+}
+
+// Auth middleware
+const isAuthenticated = (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response, next: NextFunction) => {
+  if (req.session.user) {
+    next();
+  } else {
+    res.status(401).json({ message: "Unauthorized: Please login" });
+  }
+};
+
+// Role-based middleware
+const hasRole = (role: string) => {
+  return (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response, next: NextFunction) => {
+    if (!req.session.user) {
+      return res.status(401).json({ message: "Unauthorized: Please login" });
+    }
+    
+    if (req.session.user.role === role || req.session.user.role === "admin") {
+      next();
+    } else {
+      res.status(403).json({ message: `Forbidden: Requires ${role} role` });
+    }
+  };
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup session middleware
+  app.use(session({
+    secret: "deployment-slot-booking-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
+
+  // Session setup complete
+
+  // Auth routes
+  app.post("/api/login", async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
+    try {
+      const result = loginSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid login data", 
+          errors: result.error.errors 
+        });
+      }
+      
+      const { username, password } = result.data;
+      
+      const user = await storage.validateUser(username, password);
+      
+      if (!user) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+      
+      // Store user info in session
+      req.session.user = {
+        id: user.id,
+        username: user.username,
+        role: user.role
+      };
+      
+      res.json({ 
+        message: "Login successful",
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: `Login failed: ${error.message}` });
+    }
+  });
+  
+  app.post("/api/register", async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
+    try {
+      const result = registerSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid registration data", 
+          errors: result.error.errors 
+        });
+      }
+      
+      const { username, password, role } = result.data;
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(409).json({ message: "Username already exists" });
+      }
+      
+      const newUser = await storage.createUser({
+        username,
+        password,
+        role: role || "developer"
+      });
+      
+      // Store user info in session (auto-login)
+      req.session.user = {
+        id: newUser.id,
+        username: newUser.username,
+        role: newUser.role
+      };
+      
+      res.status(201).json({ 
+        message: "Registration successful",
+        user: {
+          id: newUser.id,
+          username: newUser.username,
+          role: newUser.role
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: `Registration failed: ${error.message}` });
+    }
+  });
+  
+  app.post("/api/logout", (req: Request & { session: any }, res: Response) => {
+    req.session.destroy((err: Error) => {
+      if (err) {
+        return res.status(500).json({ message: `Logout failed: ${err.message}` });
+      }
+      res.json({ message: "Logout successful" });
+    });
+  });
+  
+  app.get("/api/me", (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
+    if (req.session.user) {
+      res.json({ 
+        authenticated: true,
+        user: req.session.user
+      });
+    } else {
+      res.json({ 
+        authenticated: false 
+      });
+    }
+  });
+  
   // Get slots for a specific week
-  app.get("/api/slots", async (req: Request, res: Response) => {
+  app.get("/api/slots", isAuthenticated, async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       let date: Date;
       if (req.query.date) {
@@ -34,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all upcoming releases
-  app.get("/api/releases", async (_req: Request, res: Response) => {
+  app.get("/api/releases", isAuthenticated, async (_req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       const releases = await storage.getUpcomingReleases();
       res.json(releases);
@@ -43,8 +206,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Book a slot
-  app.post("/api/slots/book", async (req: Request, res: Response) => {
+  // Book a slot (only developers or admins)
+  app.post("/api/slots/book", isAuthenticated, hasRole("developer"), async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       const result = bookSlotSchema.safeParse(req.body);
       
@@ -100,8 +263,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cancel a booking
-  app.delete("/api/releases/:id", async (req: Request, res: Response) => {
+  // Cancel a booking (developers or admins)
+  app.delete("/api/releases/:id", isAuthenticated, hasRole("developer"), async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       const releaseId = parseInt(req.params.id);
       
@@ -127,8 +290,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update release status
-  app.patch("/api/releases/:id/status", async (req: Request, res: Response) => {
+  // Update release status (admins only)
+  app.patch("/api/releases/:id/status", isAuthenticated, hasRole("admin"), async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       const releaseId = parseInt(req.params.id);
       
@@ -169,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get email templates
-  app.get("/api/email-templates", async (req: Request, res: Response) => {
+  app.get("/api/email-templates", isAuthenticated, async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       let templates;
       
@@ -186,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get single email template
-  app.get("/api/email-templates/:id", async (req: Request, res: Response) => {
+  app.get("/api/email-templates/:id", isAuthenticated, async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       const templateId = parseInt(req.params.id);
       
@@ -206,8 +369,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a new email template
-  app.post("/api/email-templates", async (req: Request, res: Response) => {
+  // Create a new email template (admin only)
+  app.post("/api/email-templates", isAuthenticated, hasRole("admin"), async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       const result = insertEmailTemplateSchema.safeParse(req.body);
       
@@ -229,8 +392,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update an email template
-  app.patch("/api/email-templates/:id", async (req: Request, res: Response) => {
+  // Update an email template (admin only)
+  app.patch("/api/email-templates/:id", isAuthenticated, hasRole("admin"), async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       const templateId = parseInt(req.params.id);
       
@@ -269,8 +432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete an email template
-  app.delete("/api/email-templates/:id", async (req: Request, res: Response) => {
+  // Delete an email template (admin only)
+  app.delete("/api/email-templates/:id", isAuthenticated, hasRole("admin"), async (req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       const templateId = parseInt(req.params.id);
       
@@ -300,8 +463,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get deployment statistics
-  app.get("/api/stats", async (_req: Request, res: Response) => {
+  // Get deployment statistics (authenticated users only)
+  app.get("/api/stats", isAuthenticated, async (_req: Request & { session: { user?: { id: number, username: string, role: string } } }, res: Response) => {
     try {
       const allSlots = await storage.getSlots();
       const allReleases = await storage.getReleases();
